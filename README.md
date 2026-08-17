@@ -74,8 +74,8 @@ verificar/                         las reglas del curso, que tampoco
 3. **Clone su fork:**
 
    ```bash
-   git clone https://github.com/SU-USUARIO/flp-2026-2-tema-02-ambientes.git
-   cd flp-2026-2-tema-02-ambientes
+   git clone https://github.com/SU-USUARIO/flp-2026-2-tema-02-representacion-datos.git
+   cd flp-2026-2-tema-02-representacion-datos
    ```
 
 4. **Resuelva** los ocho puntos.

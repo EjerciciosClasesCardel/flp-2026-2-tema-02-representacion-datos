@@ -8,7 +8,7 @@ on:
 env:
   # Repositorio del curso. Las pruebas y el verificador se toman siempre de
   # aquí, no de la copia del fork, para que modificarlos no sirva de nada.
-  ORIGINAL: EjerciciosClasesCardel/flp-2026-2-tema-02-ambientes
+  ORIGINAL: EjerciciosClasesCardel/flp-2026-2-tema-02-representacion-datos
 
 jobs:
   test:
