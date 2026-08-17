@@ -1,4 +1,4 @@
-# Tema 2 — Ambientes: dos representaciones del mismo TAD
+# Tema 2 — Estrategias para representar datos
 
 Fundamentos de Interpretación y Compilación de Lenguajes de Programación
 Escuela de Ingeniería de Sistemas y Computación, Universidad del Valle
@@ -7,13 +7,16 @@ Carlos Andrés Delgado Saavedra
 Ejercicio de autoseguimiento del tema 2. No se califica y no hay que
 entregarlo: las pruebas le dicen solas si va bien.
 
-El ambiente es el TAD que sostiene todo lo que viene después. Del tema 5 en
-adelante, cada intérprete que escriba va a pedirle a un ambiente el valor de
-una variable, y conviene tenerlo resuelto y entendido antes de esa clase.
+Son dos TAD y cada uno se implementa dos veces, primero con listas y después
+con procedimientos. El ambiente es el que sostiene todo lo que viene después:
+del tema 5 en adelante, cada intérprete que escriba va a pedirle a un ambiente
+el valor de una variable. Las expresiones lambda son el primer tipo de dato
+recursivo del curso y el antecedente directo de la sintaxis abstracta del
+tema 3.
 
 ## De qué se trata
 
-Va a implementar la misma interfaz dos veces (EOPL, sección 2.2):
+El ambiente tiene cuatro operaciones (EOPL, sección 2.2):
 
 ```
 empty-env    : ()                    -> Env
@@ -22,21 +25,40 @@ apply-env    : Env × Var             -> Val
 has-binding? : Env × Var             -> Bool
 ```
 
-Primero con listas, donde el ambiente es un dato que se puede imprimir y
-mirar. Después con procedimientos, donde el ambiente *es* una función y no hay
-nada que mirar: la información vive en lo que la clausura capturó.
+Las expresiones del cálculo lambda tienen once, tres por cada producción de la
+gramática más los extractores de sus componentes (EOPL, sección 2.3):
 
-Las pruebas son las mismas para las dos. Ahí está lo que hay que ver: un TAD
-no es su representación, es lo que sus operaciones prometen. Si las dos
-versiones pasan la misma batería, quien las use no puede distinguirlas, y esa
-es exactamente la libertad que da programar contra una interfaz.
+```
+<lc-exp> ::= <identifier>                      var-exp    (id)
+         ::= (lambda (<identifier>) <lc-exp>)  lambda-exp (id, exp)
+         ::= (<lc-exp> <lc-exp>)               app-exp    (rator, rand)
+```
+
+```
+var-exp  lambda-exp  app-exp            los constructores
+var-exp? lambda-exp? app-exp?           los predicados
+var-exp->id  lambda-exp->id  lambda-exp->exp
+app-exp->rator  app-exp->rand           los extractores
+```
+
+Cada TAD se implementa dos veces. Con listas el dato se puede imprimir y
+mirar; con procedimientos el dato *es* una función y no hay nada que mirar,
+porque la información vive en lo que la clausura capturó.
+
+Las pruebas son las mismas para las dos versiones. Ahí está lo que hay que
+ver: un TAD no es su representación, es lo que sus operaciones prometen. Si
+las dos pasan la misma batería, quien las use no puede distinguirlas, y esa es
+exactamente la libertad que da programar contra una interfaz.
 
 ## Cómo está organizado
 
 ```
-src/ambiente-listas.rkt           puntos 1 y 2
-src/ambiente-procedimientos.rkt   puntos 3 y 4
-pruebas/ambientes-pruebas.rkt     las pruebas, que no se modifican
+src/ambiente-listas.rkt            puntos 1 y 2
+src/ambiente-procedimientos.rkt    puntos 3 y 4
+src/lambda-listas.rkt              puntos 5 y 6
+src/lambda-procedimientos.rkt      puntos 7 y 8
+pruebas/                           las pruebas, que no se modifican
+verificar/                         las reglas del curso, que tampoco
 ```
 
 ## Cómo empezar
@@ -56,7 +78,7 @@ pruebas/ambientes-pruebas.rkt     las pruebas, que no se modifican
    cd flp-2026-2-tema-02-ambientes
    ```
 
-4. **Resuelva** los cuatro puntos.
+4. **Resuelva** los ocho puntos.
 
 5. **Haga push.** Cada push dispara las pruebas.
 
@@ -66,17 +88,37 @@ pruebas/ambientes-pruebas.rkt     las pruebas, que no se modifican
 raco test pruebas/
 ```
 
-O desde DrRacket, abriendo `pruebas/ambientes-pruebas.rkt` y pulsando
+O desde DrRacket, abriendo el archivo de pruebas que le interese y pulsando
 *Ejecutar*. Si necesita instalar Racket, use la distribución completa de
 [racket-lang.org](https://racket-lang.org): la mínima no trae `#lang eopl`.
 
 ## El punto de partida
 
-Al clonar hay 24 pruebas: 2 en verde y 22 en rojo. Las verdes comprueban que
-los dos módulos cargan y exportan las cuatro operaciones, o sea que Racket y
-`eopl` quedaron bien instalados.
+Al clonar hay 80 pruebas: 4 en verde y 76 en rojo. Las verdes comprueban que
+los cuatro módulos cargan y exportan sus operaciones, o sea que Racket y
+`eopl` quedaron bien instalados. Las otras 76 están en rojo porque cada
+operación dice `eopl:error 'sin-implementar`.
 
-## Los cuatro puntos
+Repartidas por archivo: 24 pruebas para los ambientes, 11 por representación
+más 2 de carga, y 56 para las expresiones lambda, 27 por representación más 2
+de carga.
+
+## Las reglas
+
+- Los dos TAD se construyen, no se modifican: extender un ambiente devuelve
+  otro ambiente y construir una expresión devuelve otra expresión. Sin `set!`
+  ni ninguna otra asignación destructiva.
+- Las funciones que recorren una expresión usan las once operaciones del TAD.
+  Abrir la lista con `car` y `cadr` por fuera de los extractores funciona en el
+  punto 6 y se cae en el punto 8, que es justo donde se ve si programó contra
+  la interfaz o contra la representación.
+
+Cada push corre `racket verificar/reglas.rkt` además de las pruebas. Revisa la
+primera regla y de paso dice qué operaciones quedan sin escribir. Lee el código
+como datos, así que los comentarios no disparan falsos positivos: escribir
+`;; nada de set!` no cuenta como usar `set!`.
+
+## Los ocho puntos
 
 ### 1. `empty-env`, `extend-env`, `apply-env` con listas
 
@@ -104,7 +146,48 @@ de la variable. Con eso `apply-env` y `has-binding?` quedan de una línea cada
 una. No es la única salida; si se le ocurre otra, sirve igual mientras las
 pruebas pasen.
 
-## Dos cosas que las pruebas revisan y suelen olvidarse
+### 5. La interfaz de las expresiones lambda con listas
+
+Los tres constructores, los tres predicados y los cinco extractores. Cada
+expresión se representa como una lista que empieza por un símbolo que dice de
+qué variante se trata:
+
+```racket
+(var-exp 'x)                  ; => (var-exp x)
+(lambda-exp 'x (var-exp 'x))  ; => (lambda-exp x (var-exp x))
+```
+
+Los predicados miran ese primer símbolo y los extractores sacan la posición
+que corresponde.
+
+### 6. `occurs-free?` con listas
+
+Responde si un identificador ocurre libre en una expresión, o sea si aparece
+en alguna posición donde ninguna lambda que lo encierre lo tenga como
+parámetro.
+
+```racket
+(occurs-free? (lambda-exp 'x (app-exp (var-exp 'p) (var-exp 'x))) 'x)  ; => #f
+(occurs-free? (lambda-exp 'x (app-exp (var-exp 'p) (var-exp 'x))) 'p)  ; => #t
+```
+
+La recursión sigue la forma de la gramática: en una variable se compara, en
+una abstracción se descarta el parámetro y se sigue por el cuerpo, en una
+aplicación se pregunta por el operador y por el operando.
+
+### 7. La misma interfaz con procedimientos
+
+Ahora la expresión es un procedimiento que devuelve sus componentes cuando se
+le pide. El archivo sugiere un selector numérico, que es como aparece en la
+nota de clase, pero puede despachar por mensaje como en el punto 3.
+
+### 8. `occurs-free?` con procedimientos
+
+Cópiela del punto 6. Si allá la escribió contra la interfaz, entra aquí sin
+cambiarle una letra y pasa las mismas pruebas aunque debajo no quede ni una
+lista. Que se pueda copiar es todo lo que este tema quiere mostrar.
+
+## Cuatro cosas que las pruebas revisan y suelen olvidarse
 
 - **La ligadura más reciente tapa a la anterior.** Después de
   `(extend-env 'x 2 (extend-env 'x 1 (empty-env)))`, buscar `x` da 2.
@@ -112,3 +195,14 @@ pruebas pasen.
   y lo extiende, el original tiene que seguir respondiendo lo de antes. Con
   listas sale gratis; con procedimientos también, siempre que no intente ser
   astuto con `set!`.
+- **El cuerpo de una abstracción es una expresión completa.**
+  `lambda-exp->exp` devuelve algo a lo que se le puede volver a preguntar, no
+  un identificador suelto.
+- **La misma variable puede estar ligada de un lado y libre del otro.** En
+  `((λx.x) x)`, la `x` del argumento ocurre libre aunque la del cuerpo no.
+
+## Los nombres, si va a leer el libro
+
+EOPL llama `var-exp->var`, `lambda-exp->bound-var` y `lambda-exp->body` a tres
+de los extractores, y escribe `occurs-free?` con el identificador de primer
+argumento. Aquí se dejaron los nombres y el orden de la nota de clase.
